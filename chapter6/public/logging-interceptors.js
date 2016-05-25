@@ -1,0 +1,47 @@
+angular.module('notesApp', [])
+.controller("MainCtrl", ['$http', function($http){
+  var self = this;
+  self.items = [];
+  self.newTodo = {};
+  var fetchTodos = function(){
+    return $http.get('http://localhost:8000/api/note').then(function(response){
+      self.items = response.data
+    }, function(errResponse){
+      console.log('Error while fetching notes');
+    });
+  };
+
+  fetchTodos();
+
+  self.add = function(){
+    $http.post('http://localhost:8000/api/note', self.newTodo)
+    .then(fetchTodos)
+    .then(function(response){
+      self.newTodo = {};
+    });
+  };
+
+}])
+.factory('MyLoggingInterceptor', ["$q", function($q){
+  return {
+    request: function(config){
+      console.log('Request made with', config);
+      return config;
+    },
+    requestError: function(rejection){
+      console.log('Request error du to ', rejection);
+      return $q.reject(rejection);
+    },
+    response: function(response){
+     console.log("Response from server ", response);
+     return response || $q.when(response);
+   },
+   responseError: function(rejection){
+     console.log('Error in response', rejection);
+     return $q.reject(rejection);
+   }
+ };
+}])
+.config(["$httpProvider", function($httpProvider){
+  $httpProvider.interceptors.push('MyLoggingInterceptor');
+}]);
